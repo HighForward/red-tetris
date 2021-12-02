@@ -1,0 +1,22 @@
+services:
+  front:
+    build: ./red-tetris/
+    container_name: nuxt
+    restart: always
+    volumes:
+    - ./red-tetris:/app
+    ports:
+    - '3000:3000'
+    environment:
+      PORT: 3000
+  back:
+    build: ./red-tetris-back/
+    container_name: nest
+    restart: always
+    volumes:
+      - ./red-tetris-back:/app
+    ports:
+      - '4000:4000'
+      - '81:81'
+    environment:
+      PORT: 4000

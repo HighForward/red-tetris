@@ -1,0 +1,26 @@
+@font-face {
+    font-family: 'Play';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('~assets/fonts/Play-Regular.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'DM Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('~assets/fonts/Play-Bold.ttf') format('truetype');
+}
+
+.page-enter-active, .page-leave-active
+{
+    transition: all 0.3s;
+}
+
+.page-enter, .page-leave-active {
+    opacity: 0;
+    overflow: hidden;
+    /*transform: translateY(100vh);*/
+}
