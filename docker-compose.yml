@@ -1,10 +1,10 @@
 services:
   front:
-    build: ./red-tetris/
+    build: ./red-tetris-front/
     container_name: nuxt
     restart: always
     volumes:
-    - ./red-tetris:/app
+    - ./red-tetris-front:/app
     ports:
     - '3000:3000'
     environment:

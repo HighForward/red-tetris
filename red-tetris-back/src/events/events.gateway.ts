@@ -11,8 +11,9 @@ import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 import { EventsServices } from './events.services';
 import { GamesServices } from 'src/games/games.services';
-import { LobbyType } from 'src/games/classes/lobby';
+import { LobbyType } from 'src/games/classes/LobbyHandler';
 import { LobbyDto } from 'src/games/dto/lobby.dto';
+import { ErrorInterface } from './interfaces/error.interface';
 
 @WebSocketGateway(81, {
     cors: {
@@ -28,78 +29,152 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     private logger: Logger = new Logger('AppGateway');
 
     afterInit(server: Server) {
-        this.logger.log('WebSocket Gateway listening');
+        console.log('WebSocket Gateway listening');
     }
 
     handleConnection(client: Socket, ...args: any[]) {
-        this.logger.log(`Client connected: ${client.id}`);
         this.eventsServices.pushUserId(client.id, client)
     }
 
     handleDisconnect(client: Socket) {
-        this.logger.log(`Client disconnected: ${client.id}`);
+
+        const user = this.eventsServices.findOneById(client.id)
+        if (!user)
+            return ({ error: 'You\'re not online.' })
+
+        this.gamesServices.removePlayerFromEverything(user, this.server)
         this.eventsServices.RemoveOneById(client.id)
     }
 
-    @SubscribeMessage('usernameSelected')
-    validateUsername(client: Socket, payload: string) {
-        this.eventsServices.setUsername(client.id, payload)
-    }
-
-    @SubscribeMessage('createGame')
-    createGame(client: Socket, payload: string) {
-
-        const user = this.eventsServices.findOneById(client.id)
-        if (!user)
-            return ({ error: 'not connected' })
-
-        const lobby = this.gamesServices.createNewLobby(user, payload, LobbyType.Multi)
-        this.server.emit('newLobby', lobby)
-        return (lobby.toDTO())
-
-    }
-
-    @SubscribeMessage('createSoloGame')
-    createSoloGame(client: Socket, payload: void)
+    @SubscribeMessage('getGuestUsername')
+    getGuestUsername(client: Socket)
     {
         const user = this.eventsServices.findOneById(client.id)
         if (!user)
-            return ({ error: 'not connected' })
+            return ({ error: 'You\'re not online.' })
 
-        const lobby = this.gamesServices.createNewLobby(user, `Game de ${client.id}`, LobbyType.Solo)
-        this.server.emit('newLobby', lobby.toDTO())
-        return (lobby.toDTO())
+        return user.username
+    }
+
+
+    @SubscribeMessage('usernameSelected')
+    validateUsername(client: Socket, username: string) {
+        this.eventsServices.setUsername(client.id, username)
+        return true
+    }
+
+    /** LOBBY EVENTS **/
+
+    @SubscribeMessage('createLobby')
+    async createLobby(client: Socket, payload: string): Promise<ErrorInterface | LobbyDto> {
+
+        const user = this.eventsServices.findOneById(client.id)
+        if (!user)
+            return ({ error: 'You\'re not online'})
+
+        const lobby = this.gamesServices.createLobby(user, payload, LobbyType.Multi, this.server)
+        return lobby
+    }
+
+    @SubscribeMessage('joinLobby')
+    joinLobby(client: Socket, uid: string) : LobbyDto | ErrorInterface
+    {
+        const user = this.eventsServices.findOneById(client.id)
+        if (!user)
+            return ({ error: 'You\'re not online.' })
+
+        const lobby = this.gamesServices.joinLobby(user, uid, this.server)
+        return lobby
+    }
+
+    @SubscribeMessage('getLobby')
+    getLobby(client: Socket, uid: string) : LobbyDto | object
+    {
+        const user = this.eventsServices.findOneById(client.id)
+        if (!user)
+            return ({ error: 'You\'re not online.' })
+
+        const lobby = this.gamesServices.getLobbyOfUser(user, uid)
+        if (!lobby)
+            return ({ error: 'Lobby can\'t be found' })
+        return lobby.toDTO()
     }
 
     @SubscribeMessage('getLobbies')
-    getLobbys(client: Socket, payload: void) {
+    getLobbys(client: Socket, payload: void) : LobbyDto[] {
 
         const lobbies = this.gamesServices.getLobbies()
         return lobbies
     }
 
-    @SubscribeMessage('startGame')
-    startGame(client: Socket, game_uid: string)
+    @SubscribeMessage('leaveLobby')
+    leaveLobby(client: Socket, uid: string)
     {
-        return this.gamesServices.startGame(game_uid)
+        const user = this.eventsServices.findOneById(client.id)
+        if (!user)
+            return ({ error: 'You\'re not online.' })
+
+        return this.gamesServices.leaveLobby(user, this.server)
     }
 
-    @SubscribeMessage('stopGame')
-    stopGame(client: Socket, game_uid: string)
+    @SubscribeMessage('startLobby')
+    startLobby(client: Socket, uid: string)
     {
-        return this.gamesServices.stopGame(game_uid)
+        const user = this.eventsServices.findOneById(client.id)
+        if (!user)
+            return ({ error: 'You\'re not online.' })
+
+        if (!this.gamesServices.startLobby(user, uid, this.server))
+            return ({ error: 'Tu n\'as pas les droits pour lancer cette partie' })
+        else
+            true
+
     }
+
+    @SubscribeMessage('messageLobby')
+    receiveMsgLobby(client: Socket, payload: { game_uid: string, msg: string }) : ErrorInterface | boolean
+    {
+        const user = this.eventsServices.findOneById(client.id)
+        if (!user)
+            return ({ error: 'You\'re not online.' })
+
+        this.gamesServices.sendMessageToLobby(user, payload.game_uid, payload.msg)
+        return true
+    }
+
+    /** **/
+    /** GAME EVENT **/
 
     @SubscribeMessage('rotateBlock')
     rotateBlock(client: Socket, game_uid: string)
     {
-        this.gamesServices.rotateBlock(game_uid)
+        const user = this.eventsServices.findOneById(client.id)
+        if (!user)
+            return ({ error: 'You\'re not online.' })
+
+        this.gamesServices.rotateBlock(user, game_uid)
     }
 
     @SubscribeMessage('translateBlock')
     translateBlock(client: Socket, payload: { game_uid: string, value: number })
     {
-        this.gamesServices.translateBlock(payload.game_uid, payload.value)
+        const user = this.eventsServices.findOneById(client.id)
+        if (!user)
+            return ({ error: 'You\'re not online.' })
+
+        this.gamesServices.translateBlock(user, payload.game_uid, payload.value)
     }
+
+    @SubscribeMessage('fastDown')
+    fastDown(client: Socket, game_uid: string)
+    {
+        const user = this.eventsServices.findOneById(client.id)
+        if (!user)
+            return ({ error: 'You\'re not online.' })
+
+        this.gamesServices.fastDown(user, game_uid, this.server)
+    }
+
+    /** **/
 
 }

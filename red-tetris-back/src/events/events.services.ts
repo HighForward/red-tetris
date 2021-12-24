@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { UserInterface } from "./interfaces/user.interface";
+import { UserInterface, UserType } from "./interfaces/user.interface";
 import { Socket } from 'socket.io';
 
 
@@ -19,7 +19,7 @@ export class EventsServices {
     }
 
     findOneIndexById(id: string) : number {
-        return this.users.findIndex((user) => user.id === id)
+        return this.users.findIndex((user) =>  { return user.id === id })
     }
 
     RemoveOneById(id: string) : void
@@ -27,7 +27,7 @@ export class EventsServices {
         let user_index: number = -1
         if ((user_index = this.findOneIndexById(id)) !== -1)
         {
-            this.users.splice(user_index)
+            this.users.splice(user_index, 1)
         }
     }
 
@@ -35,13 +35,23 @@ export class EventsServices {
     {
         const user: UserInterface = {
             id: id,
-            username: "",
+            username: `guest#${id.substring(0, 4)}`,
             socket: client,
+            type: UserType.NONE
         }
         this.users.push(user)
     }
 
-    setUsername(id: string, payload: string) {
-        this.findOneById(id).username = payload
+    setUsername(id: string, username: string) {
+        let user = this.findOneById(id)
+        if (user) {
+            user.username = username
+            user.type = UserType.USERNAME
+        }
+    }
+
+    getUsers()
+    {
+        return this.users
     }
 }

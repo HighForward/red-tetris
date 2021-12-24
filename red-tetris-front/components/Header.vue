@@ -1,7 +1,6 @@
 <template>
-	<div class="flex">
-		<button @click="this.goBack" class="text-xl bg-black pl-4" style="color: white"><</button>
-		<div  class=" flex w-full justify-center items-center bg-black" style="height: 64px" >
+	<div class="flex" style="font-family: 'Play', sans-serif;">
+		<div  class=" flex w-full justify-center items-center bg-gray" style="height: 64px; box-shadow: 0px 0px 25px 5px rgba(0, 0, 0, 0.35);" >
 			<nuxt-link to="/" class="text-2xl font-semibold text-orange">
 					RED TETRIS
 			</nuxt-link>
@@ -9,18 +8,12 @@
 	</div>
 </template>
 
-
 <script lang="ts">
-import { Vue, Component, Prop } from 'vue-property-decorator'
+import { Vue, Component } from 'nuxt-property-decorator'
 
 @Component({})
 export default class Header extends Vue {
-	title: string = "RED TETRIS"
 
-	goBack()
-	{
-		window.history.length > 1 ? this.$router.go(-1) : this.$router.push('/')
-	}
 }
 
 </script>

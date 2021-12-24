@@ -1,101 +1,179 @@
 import { Injectable } from "@nestjs/common";
 import { SchedulerRegistry } from "@nestjs/schedule";
-import { SubscribeMessage } from "@nestjs/websockets";
+import { SubscribeMessage, WebSocketServer } from "@nestjs/websockets";
 import { Socket, Server } from 'socket.io';
 import { EventsServices } from "src/events/events.services";
+import { ErrorInterface } from "src/events/interfaces/error.interface";
 import { UserInterface } from "src/events/interfaces/user.interface";
-import {GameState, Lobby } from "./classes/lobby";
+import LobbyHandler, {LobbyState, LobbyType } from "./classes/LobbyHandler";
+import { LobbyDTO } from "./classes/LobbyHandler";
 
 @Injectable()
 export class GamesServices {
 
-    private lobbies: Lobby[] = []
     constructor(private eventsServices: EventsServices,
                 private schedulerRegistry: SchedulerRegistry) {}
 
-    getLobbies()
+    private LobbyHandler: LobbyHandler[] = []
+
+    /** LOBBY HANDLER **/
+
+    getLobbyByUID(uid: string)
     {
-        return this.lobbies.map((lobby) => lobby.toDTO())
+        return this.LobbyHandler.find((lobby) => { return lobby.uid === uid })
     }
 
-    createNewLobby(owner: UserInterface, lobbyName: string, lobbyType: string) : Lobby {
-
-        const newLobby = new Lobby(owner, lobbyName, lobbyType)
-        this.lobbies.push(newLobby)
-        return newLobby
-    }
-
-    getLobby(lobbyName: string)
+    removePlayerFromEverything(player: UserInterface, server: Server)
     {
-        return this.lobbies.find((lobby) => { lobby.lobbyName = lobbyName })
+        this.leaveLobby(player, server)
     }
 
-    getLobbyByUID(game_uid: string)
+    isUserAlreadyInLobby(player: UserInterface)
     {
-        return this.lobbies.find((lobby) => { lobby.game_uid = game_uid })
+        const lobbyTarget = this.LobbyHandler.filter((lobby) => {
+            return lobby.isPlayerOfLobby(player)
+        })
+
+        return (lobbyTarget.length > 0)
     }
 
-    startGame(game_uid: string) {
+    createLobby(owner: UserInterface, lobbyName: string, lobbyType: LobbyType, server: Server) : LobbyDTO
+    {
 
-        const lobby = this.lobbies.find((lobby) => { if (lobby.game_uid === game_uid) return true })
+        if (this.isUserAlreadyInLobby(owner))
+            this.removePlayerFromEverything(owner, server)
+
+        const lobby = new LobbyHandler(owner, lobbyName, lobbyType)
+        this.LobbyHandler.push(lobby)
+        server.emit('newLobby', lobby.toDTO())
+        return lobby.toDTO()
+    }
+
+    joinLobby(user: UserInterface, uid: string, server: Server) : LobbyDTO | ErrorInterface
+    {
+        let lobby = this.getLobbyByUID(uid)
+        if (lobby) {
+
+            if (!lobby.isPlayerOfLobby(user)) {
+
+                if (this.isUserAlreadyInLobby(user))
+                    this.removePlayerFromEverything(user, server)
+
+                lobby.joinLobby(user)
+            }
+
+
+            lobby.emitUpdateLobby()
+            server.emit('updateLobbyList', lobby.toDTO())
+
+
+            return lobby.toDTO()
+        }
+        return { error: 'Lobby do not exists' }
+    }
+
+    leaveLobby(user: UserInterface, server: Server) : LobbyDTO | object
+    {
+        let lobby = this.LobbyHandler.find((lobby) => {
+            return (lobby.players.filter((usertmp) => usertmp.id === user.id).length)
+        })
 
         if (lobby)
         {
-            const user = this.eventsServices.findOneById(lobby.owner.id)
-
-            if (lobby.owner.id === user.id)
+            //return false if lobby become empty
+            if (!lobby.leaveLobby(user, this.schedulerRegistry, server))
             {
-                lobby.state = GameState.Started
-                const interval = setInterval(() => {
-                    lobby.gameLoop()
-                }, 1000)
-
-                this.schedulerRegistry.addInterval(lobby.game_uid, interval)
-
-                return (lobby.toDTO())
+                const index = this.LobbyHandler.findIndex((lobbytmp) => {return lobbytmp.uid === lobby.uid})
+                if (index !== -1) {
+                    server.emit('removeLobby', lobby.toDTO())
+                    this.LobbyHandler.splice(index, 1)
+                    return lobby.toDTO()
+                }
             }
+
+            lobby.emitUpdateLobby()
+            server.emit('updateLobbyList', lobby.toDTO())
+
+            return lobby.toDTO()
         }
+        return { error: 'Error while leaving lobby' }
     }
 
-    stopGame(game_uid: string) {
-
-        const lobby = this.lobbies.find((lobby) => { if (lobby.game_uid === game_uid) return true })
-
-        if (lobby)
-        {
-            const user = this.eventsServices.findOneById(lobby.owner.id)
-
-            if (lobby.owner.id === user.id) {
-                this.schedulerRegistry.deleteInterval(lobby.game_uid)
-            }
-        }
-    }
-
-    rotateBlock(game_uid: string)
+    getLobbyOfUser(user: UserInterface, uid: string) : LobbyHandler | undefined
     {
-        const lobby = this.lobbies.find((lobby) => { if (lobby.game_uid === game_uid) return true })
+        const lobby = this.getLobbyByUID(uid)
+        if (lobby)
+        {
+            const user = lobby.players.find((user) => { return user.id === user.id })
+            if (user)
+                return lobby
+        }
+        return undefined
+    }
+
+    isUserOwnerOfLobby(user: UserInterface) : LobbyHandler | undefined
+    {
+        return this.LobbyHandler.find((lobby) => {
+            return (lobby.owner.id === user.id)
+        })
+    }
+
+    getLobbies() : LobbyDTO[]
+    {
+        return this.LobbyHandler.map((lobby) => lobby.toDTO())
+    }
+
+    startLobby(user: UserInterface, uid: string, server: Server) : boolean
+    {
+        let lobby = this.isUserOwnerOfLobby(user)
+        if (lobby && lobby.uid === uid && lobby.state === LobbyState.WARMING)
+        {
+            lobby.startLobby(this.schedulerRegistry, server)
+
+            server.emit('updateLobbyList', lobby.toDTO())
+
+            return true
+        }
+        return false
+    }
+
+    sendMessageToLobby(user: UserInterface, game_uid: string, msg: string)
+    {
+        let lobby = this.getLobbyOfUser(user, game_uid)
 
         if (lobby)
         {
-            const user = this.eventsServices.findOneById(lobby.owner.id)
+            lobby.pushNewMessage(user, msg)
+        }
 
-            if (lobby.owner.id === user.id) {
-                lobby.rotateBlock()
-            }
+    }
+
+    rotateBlock(user: UserInterface, game_uid: string)
+    {
+        let lobby = this.getLobbyOfUser(user, game_uid)
+
+        if (lobby)
+        {
+            lobby.rotateBlock(user)
         }
     }
 
-    translateBlock(game_uid: string, value: number)
+    translateBlock(user: UserInterface, game_uid: string, value: number)
     {
-        const lobby = this.lobbies.find((lobby) => { if (lobby.game_uid === game_uid) return true })
+        let lobby = this.getLobbyOfUser(user, game_uid)
 
         if (lobby)
         {
-            const user = this.eventsServices.findOneById(lobby.owner.id)
+            lobby.translateBlock(user, value)
+        }
+    }
 
-            if (lobby.owner.id === user.id) {
-                lobby.translateBlock(value)
-            }
+    fastDown(user: UserInterface, game_uid: string, server: Server)
+    {
+        let lobby = this.getLobbyOfUser(user, game_uid)
+        if (lobby)
+        {
+                lobby.fastDown(user, this.schedulerRegistry, server)
         }
     }
 }

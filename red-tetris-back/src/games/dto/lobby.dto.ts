@@ -3,7 +3,7 @@ import { UserInterface } from "src/events/interfaces/user.interface"
 export class LobbyDto {
     owner: UserInterface
     players: UserInterface[] = []
-    lobbyName: string
-    game_uid: string
+    name: string
+    uid: string
     type: string
 }

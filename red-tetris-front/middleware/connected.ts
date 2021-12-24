@@ -6,9 +6,9 @@ import { Middleware } from '@nuxt/types'
 // }
 
 
-const redirect: Middleware = (context) => {
-    console.log('coucou')
+export let connected: Middleware = (context) => {
+    // context.app.$socket.connected
 }
 
-export default redirect
+// export default connected
 // export default myMiddleware
