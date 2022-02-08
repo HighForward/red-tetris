@@ -38,7 +38,7 @@
 						</form>
 					</div>
 				</div>
-			</div>
+      </div>
 		</div>
 	</div>
 </template>
@@ -128,13 +128,12 @@ export default class MultiplayerLobby extends Vue {
 .buttonMulti:hover .imgTetrisMulti
 {
 	transform: rotate(380deg);
-
 }
 
 .imgTetrisMulti {
 	@apply object-contain;
-	width: 75px;
-	height: 30px;
+  width: 75px;
+  height: 30px;
 	transition: all 0.3s ease-in-out 0s;
 }
 

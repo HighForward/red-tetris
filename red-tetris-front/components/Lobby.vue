@@ -39,23 +39,25 @@
 							<div class="flex flex-row justify-between"><span>state</span><span class="text-purple">{{ this.getLobby.state }}</span></div>
 							<div class="flex flex-row justify-between"><span>uid</span><span class="text-purple">{{ this.getLobby.uid }}</span></div>
 							<div class="flex flex-row justify-between"><span>owner</span><span class="text-purple">{{ this.getLobby.owner.username }}</span></div>
-
 						</div>
 					</div>
 					<div class="flex flex-1 flex-col">
-						<div class="m-2 p-2">
+						<div class="">
 							<h1 class="text-center text-orange">OPTIONS</h1>
-							<div class="flex flex-row justify-around my-4">
+							<div class="flex flex-row justify-around mt-2">
 								<img class="imgTetromino" src="@/assets/images/Tetromino_J.svg">
 								<img class="imgTetromino" src="@/assets/images/Tetromino_Z.svg">
 								<img class="imgTetromino" src="@/assets/images/Tetromino_T.svg">
-								<img @click="leaveLobby" class="imgTetromino" src="@/assets/images/Tetromino_S.svg">
+                <div class="flex flex-col items-center justify-center">
+								  <img @click="leaveLobby" @mouseover="infoEnum = 1" @mouseleave="infoEnum = 0" class="imgTetromino cursor-pointer" src="@/assets/images/Tetromino_S.svg">
+                  <span v-if="infoEnum === 1" class="font-normal text-sm text-smallgray text-center">Leave</span>
+                </div>
 							</div>
 						</div>
 
 					</div>
 					<div class="flex flex-1 flex-col justify-end m-2">
-						<button @click="startLobby" class="bg-gradient-to-r from-orange to-pink border-4 border-black font-bold" >START GAMES</button>
+						<button @click="startLobby" class="border border-purple py-2 text-purple font-bold">START GAMES</button>
 					</div>
 				</div>
 
@@ -76,6 +78,7 @@ const LobbyStore = namespace('modules/lobby')
 export default class Lobby extends Vue {
 
 	message: string = ""
+  infoEnum: number = 0
 
 	@LobbyStore.Getter
 	public getLobby!: LobbyInterface | null
@@ -152,6 +155,16 @@ export default class Lobby extends Vue {
 	height: 30px;
 	transition: all 0.3s ease-in-out 0s;
 	/*object-fit: cover;*/
+}
+
+.imgTetromino::after
+{
+  display: block;
+  z-index: 50;
+  width: 150px;
+  height: 100px;
+  background: red;
+  content: 'CONTENNNNNNNT';
 }
 
 .imgTetromino:hover

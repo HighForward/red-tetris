@@ -9,6 +9,7 @@ services:
     - '3000:3000'
     environment:
       PORT: 3000
+    command: "npm run dev"
   back:
     build: ./red-tetris-back/
     container_name: nest
@@ -20,3 +21,4 @@ services:
       - '81:81'
     environment:
       PORT: 4000
+    command: "npm run start:dev"
