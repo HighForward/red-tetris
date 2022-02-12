@@ -55,10 +55,6 @@ export default class Lobby extends VuexModule {
     {
         let pivot = this.lobbyList.find((tmp) => tmp.uid === lobby.uid)
 
-        // const lobby_swap: LobbyInterface = {
-        //     players: lobby.players
-        // }
-
         if (pivot) {
             pivot.players = lobby.players
             pivot.state = lobby.state

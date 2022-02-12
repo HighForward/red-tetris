@@ -6,7 +6,7 @@
 			<div v-if="this.$socket.connected">
 				<div>
 					<InfoBoard></InfoBoard>
-
+          <PlayerList></PlayerList>
 				</div>
 				<div>
 					<Nuxt />
@@ -22,13 +22,14 @@
 <script lang="ts">
 
 import { Vue, Component, Prop, namespace } from 'nuxt-property-decorator'
-import { LobbyInterface, BoardInterface } from '@/types/gametype'
+import {LobbyInterface, BoardInterface, UserInterface, UpdateUsersOnline} from '@/types/gametype'
 import { Socket } from 'vue-socket.io-extended'
 import InfoBoard from '/components/InfoBoard.vue'
 
 const LobbyStore = namespace('modules/lobby')
 const BoardStore = namespace('modules/board')
 const UserStore = namespace('modules/user')
+
 
 @Component({
 	components: {
@@ -91,13 +92,30 @@ export default class App extends Vue {
 	@UserStore.Mutation
 	public setUsername!: (username: string) => void
 
+  @UserStore.Mutation
+  public setUsersListOnline!: (users: UserInterface[]) => void
+
+  @UserStore.Mutation
+  public setUserOnline!: (payload: UpdateUsersOnline) => void
+
 	mounted()
 	{
 		this.$socket.client.connect()
 		this.$socket.client.emit('getGuestUsername', null, (username: string) => {
 			this.setUsername(username)
 		})
+
+    this.$socket.client.emit('getUsersOnline', null, (users: UserInterface[]) => {
+      this.setUsersListOnline(users)
+    })
+
 	}
+
+  @Socket('setUserOnlineUpdate')
+  updateUsersOnlineList(payload: UpdateUsersOnline)
+  {
+    this.setUserOnline(payload)
+  }
 
 	@Socket('newLobby')
 	addLobby(newLobby: LobbyInterface)

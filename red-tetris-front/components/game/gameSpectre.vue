@@ -1,6 +1,11 @@
 <template>
 	<div>
-		<h1 class="flex text-xs m-1 justify-center text-red" v-if="this.currPlayer" >{{ this .currPlayer.username}}</h1>
+
+    <div class="flex flex-col p-4 justify-center items-center text-smallgray text-xs" v-if="this.currPlayer">
+      <span>Partie de:<span class="m-1 justify-center text-red">{{ " " + this.currPlayer.username }}</span></span>
+      <span>Score:<span class="m-1 justify-center text-red">{{ " " + this.score }}</span></span>
+    </div>
+
 		<div class="flex flex-col bg-gray rounded-sm" style="box-shadow: 0px 0px 25px 5px rgba(0, 0, 0, 0.35);">
 			<div class="flex flex-row" v-for="(row, i) in this.board" :key="i">
 				<div class="h-4 w-4" v-for="(item, x) in row" :key="x">
@@ -25,6 +30,7 @@ export default class GameSpectre extends Vue {
 
 	board: number[][] = []
 	currPlayer: UserInterface | null = null
+  score: number = 0
 
 	mounted()
 	{
@@ -57,6 +63,7 @@ export default class GameSpectre extends Vue {
 		{
 			this.currPlayer = data.player
 			this.board = data.board
+      this.score = data.score
 		}
 	}
 

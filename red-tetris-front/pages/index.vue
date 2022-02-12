@@ -7,7 +7,6 @@
 <script lang="ts">
 import {Component, Vue} from 'nuxt-property-decorator'
 import Pseudo from '/components/Pseudo.vue'
-import {connected} from '../middleware/connected'
 
 @Component({
 	components: {

@@ -13,8 +13,9 @@ import { GamesServices } from 'src/games/games.services';
 import { LobbyType } from 'src/games/classes/LobbyHandler';
 import { LobbyDto } from 'src/games/dto/lobby.dto';
 import { ErrorInterface } from './interfaces/error.interface';
+import {UserDTO} from "./interfaces/user.interface";
 
-@WebSocketGateway(81,
+@WebSocketGateway(Number(process.env.WS_PORT),
 { cors: '*:*' }
 )
 export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -26,11 +27,16 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     private logger: Logger = new Logger('AppGateway');
 
     afterInit(server: Server) {
-        console.log('WebSocket Gateway listening');
+        console.log(`WebSocket Gateway listening on port: ${process.env.WS_PORT}`);
     }
 
     handleConnection(client: Socket, ...args: any[]) {
         this.eventsServices.pushUserId(client.id, client)
+        const {socket, ...payload} = this.eventsServices.findOneById(client.id)
+        this.server.emit('setUserOnlineUpdate', {
+            user: payload,
+            online: true
+        })
     }
 
     handleDisconnect(client: Socket) {
@@ -40,7 +46,14 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
             return ({ error: 'You\'re not online.' })
 
         this.gamesServices.removePlayerFromEverything(user, this.server)
+        const {socket, ...payload} = user
+        console.log(payload)
+        this.server.emit('setUserOnlineUpdate', {
+            user: payload,
+            online: false
+        })
         this.eventsServices.RemoveOneById(client.id)
+
     }
 
     @SubscribeMessage('getGuestUsername')
@@ -53,11 +66,23 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         return user.username
     }
 
-
     @SubscribeMessage('usernameSelected')
     validateUsername(client: Socket, username: string) {
         this.eventsServices.setUsername(client.id, username)
         return true
+    }
+
+    @SubscribeMessage('getUsersOnline')
+    getUsersOnline(client: Socket) : UserDTO[]
+    {
+        const users = this.eventsServices.getUsers()
+        return users.map((user) => {
+            return {
+                id: user.id,
+                username: user.username,
+                type: user.type
+            }
+        })
     }
 
     /** LOBBY EVENTS **/

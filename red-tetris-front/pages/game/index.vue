@@ -1,8 +1,9 @@
 <template>
 	<div v-if="this.getLobby && this.getBoard" class="flex flex-col">
 
-		<div class="flex w-full p-4 justify-center items-center text-smallgray">
-			Partie de:<span class="text-red pl-2 font-bold">{{ " " + getBoard.player.username }}</span>
+		<div class="flex flex-col w-full p-4 justify-center items-center text-smallgray">
+			<span>Partie de:<span class="text-red pl-2 font-bold">{{ " " + getBoard.player.username }}</span></span>
+			<span>Score:<span class="text-red pl-2 font-bold">{{ " " + getBoard.score }}</span></span>
 		</div>
 
 		<div class="flex flex-row justify-center items-start h-full font-semibold">
@@ -71,6 +72,13 @@ export default class Game extends Vue {
 	@LobbyStore.Getter
 	public getLobby!: LobbyInterface | null
 
+  keySet: Record<string, boolean> = {
+    "ArrowUp": false,
+    "ArrowDown": false,
+    "ArrowLeft": false,
+    "ArrowRight": false
+  }
+
 	setColor(val: number)
 	{
 		if (val === 1)
@@ -91,27 +99,50 @@ export default class Game extends Vue {
 			return 'bg-gray'
 	}
 
-	keyEvents(e: KeyboardEvent)
+  keyDownEvents(e: KeyboardEvent)
 	{
-		if (e.key === 'ArrowUp')
-			this.rotateBlock()
-		else if (e.key === 'ArrowLeft')
-			this.translateBlock(-1)
-		else if (e.key === 'ArrowRight')
-			this.translateBlock(1)
-		else if (e.key === 'ArrowDown')
-			this.fastDown()
-		return true
+    if (!this.keySet[e.key])
+    {
+      this.keySet[e.key] = true
+      this.moveAction(e.key)
+    }
 	}
+
+  keyUpEvents(e: KeyboardEvent)
+  {
+    this.keySet[e.key] = false
+  }
+
+  moveAction(key: string)
+  {
+
+    const delay = (key === 'ArrowUp') ? 150 : 100
+
+    if (this.keySet['ArrowUp'] && key === 'ArrowUp')
+      this.rotateBlock()
+    else if (this.keySet['ArrowLeft'] && key === 'ArrowLeft')
+      this.translateBlock(-1)
+    else if (this.keySet['ArrowRight'] && key ==='ArrowRight')
+      this.translateBlock(1)
+    else if (this.keySet['ArrowDown'] && key === 'ArrowDown')
+      this.fastDown()
+
+    setTimeout(() => {
+      if (this.keySet[key])
+        this.moveAction(key)
+    }, delay)
+  }
 
 	mounted()
 	{
-		document.addEventListener('keydown', this.keyEvents)
-	}
+		document.addEventListener('keydown', this.keyDownEvents)
+		document.addEventListener('keyup', this.keyUpEvents)
+  }
 
 	beforeDestroy()
 	{
-		document.removeEventListener('keydown', this.keyEvents)
+		document.removeEventListener('keydown', this.keyDownEvents)
+		document.removeEventListener('keydown', this.keyUpEvents)
 	}
 
 	rotateBlock()

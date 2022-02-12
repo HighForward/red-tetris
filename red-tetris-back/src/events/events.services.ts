@@ -13,7 +13,7 @@ export class EventsServices {
         let user_index: number = -1
         if ((user_index = this.users.findIndex((user) => user.id === id)) !== -1)
         {
-            return this.users.at(user_index)
+            return this.users[user_index]
         }
         return undefined
     }

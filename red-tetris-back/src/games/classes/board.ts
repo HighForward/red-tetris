@@ -1,4 +1,4 @@
-import { UserInterface } from "src/events/interfaces/user.interface"
+ import { UserInterface } from "src/events/interfaces/user.interface"
 
 interface Block {
     x: number
@@ -63,6 +63,7 @@ interface BoardDTO {
 
     player: UserInterface
     state: GameState
+    score: number
     board: Array<Array<number>>
     currentBlock?: Block
 }
@@ -76,6 +77,7 @@ export class Board
     currentBlock: Block = null
     blockPatern: number[]
     blockIndex: number = 0
+    score: number = 0
 
     constructor(owner: UserInterface, blockPatern: number[]) {
 
@@ -118,6 +120,7 @@ export class Board
                 username: this.player.username,
                 type: this.player.type
             },
+            score: this.score,
             board: tmpBoard
         }
         others.forEach((user) => {
@@ -296,6 +299,7 @@ export class Board
 
     removeFullRow()
     {
+        let score_coef = 0
         for (let row = 0; row < this.board.length; row++)
         {
             if (this.board[row].filter((block) => block === 0).length === 0)
@@ -308,8 +312,10 @@ export class Board
                     row--
                 }
                 this.board[0].fill(0)
+                score_coef++
             }
         }
+        this.score += ((10 * score_coef) + (5 * score_coef))
     }
 
     blockFall()
@@ -408,6 +414,7 @@ export class Board
                 username: this.player.username,
                 type: this.player.type
             },
+            score: this.score,
             board: this.board,
             // currentBlock: this.currentBlock,
             state: this.state

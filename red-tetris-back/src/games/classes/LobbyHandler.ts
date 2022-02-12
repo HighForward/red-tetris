@@ -87,7 +87,6 @@ export default class LobbyHandler
         this.players.push(user)
         const msg = `${user.username} à rejoint la partie.`
         this.emitMsgToChat(msg)
-
     }
 
     leaveLobby(user: UserInterface, schedulerRegistry: SchedulerRegistry, server: Server) : boolean

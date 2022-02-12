@@ -19,6 +19,16 @@ export default {
         ]
     },
 
+    env: {
+      PORT: process.env.PORT || 3000,
+      WS_PORT: process.env.WS_PORT || 81,
+      BACKEND_URL: process.env.BACKEND_URL || 'http://localhost'
+    },
+
+    server: {
+      host: "0.0.0.0"
+    },
+
     // Global CSS: https://go.nuxtjs.dev/config-css
     css: [
         '~/assets/css/main.css'

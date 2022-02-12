@@ -46,5 +46,11 @@ export interface BoardInterface
 {
     player: UserInterface
     state: GameState
+    score: number
     board: Array<Array<number>>
+}
+
+export interface UpdateUsersOnline {
+  user: UserInterface,
+  online: boolean
 }

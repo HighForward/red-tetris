@@ -5,6 +5,7 @@
 					RED TETRIS
 			</nuxt-link>
 		</div>
+
 	</div>
 </template>
 

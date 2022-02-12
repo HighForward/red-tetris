@@ -16,3 +16,15 @@ Chaque joueur se connecte à une partie via une hash-based url de type :
 Solo play
 
 BONUS:
+
+
+
+
+
+
+
+
+SHOW NB OF PLAYER ONLINE
+OPTIMIZE PAYLOAD OF BOARD
+OPTIMIZE KEYPRESS
+CLOSE ALL BOARD IN GAME WHEN THE LAST PLAYER IS THE ONLY ALIVE
