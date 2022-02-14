@@ -19,7 +19,8 @@ module.exports = {
         gray: '#1D1D1D',
         bluesky: '#00F5FF',
         red: '#FF0000',
-        smallgray: '#DDDDDD'
+        smallgray: '#DDDDDD',
+        hardgray: '#0F0F0F'
     }
   },
   variants: {

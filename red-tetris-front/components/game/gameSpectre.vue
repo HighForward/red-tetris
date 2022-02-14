@@ -9,7 +9,7 @@
 		<div class="flex flex-col bg-gray rounded-sm" style="box-shadow: 0px 0px 25px 5px rgba(0, 0, 0, 0.35);">
 			<div class="flex flex-row" v-for="(row, i) in this.board" :key="i">
 				<div class="h-4 w-4" v-for="(item, x) in row" :key="x">
-					<div class="w-full h-full" :class="setColor(item)" style="box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.5);"></div>
+					<div class="w-full h-full" :class="setColorCall(item)" style="box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.5);"></div>
 				</div>
 			</div>
 		</div>
@@ -22,6 +22,7 @@ import { Vue, Component, Prop, Watch } from 'nuxt-property-decorator'
 import {Socket} from 'vue-socket.io-extended'
 import { BoardInterface} from '@/types/gametype'
 import {UserInterface, LobbyInterface} from '@/types/gametype'
+import {setColor} from '@/utils/game-utils'
 
 @Component({})
 export default class GameSpectre extends Vue {
@@ -32,28 +33,10 @@ export default class GameSpectre extends Vue {
 	currPlayer: UserInterface | null = null
   score: number = 0
 
-	mounted()
-	{
-		// this.board = new Array(20).fill(new Array(10).fill(0))
-	}
 
-
-	setColor(val: number)
+	setColorCall(val: number)
 	{
-		if (val === 1)
-			return 'bg-purple'
-		if (val === 2)
-			return 'bg-yellow'
-		if (val === 3)
-			return 'bg-green'
-		if (val === 4)
-			return 'bg-blue'
-		if (val === 5)
-			return 'bg-orange'
-		if (val === 6)
-			return 'bg-bluesky'
-		if (val === 7)
-			return 'bg-red'
+		return setColor(val)
 	}
 
 	@Socket('getLobbyBoards')

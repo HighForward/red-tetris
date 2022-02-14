@@ -15,10 +15,10 @@
 									<img v-if="lobby.players.find((p) => { return p.id === $socket.client.id })" src="@/assets/images/user.png" alt="">
 								</div>
 
-								<div>
+								<div class="flex items-center">
 									<span>[{{ lobby.state }}]</span>
 									<span>{{'[' + lobby.players.length + '/8]'}}</span>
-									<button @click="joinLobby(lobby)" class="bg-red rounded-lg px-2" style="color: whitesmoke">rejoindre</button>
+									<button @click="joinLobby(lobby)" class="bg-red rounded-lg px-2 ml-2" style="color: whitesmoke">rejoindre</button>
 								</div>
 							</div>
 						</div>
@@ -115,7 +115,6 @@ export default class MultiplayerLobby extends Vue {
 	joinLobby(lobby: LobbyInterface)
 	{
 		this.$socket.client.emit('joinLobby', lobby.uid, (lobbyDto: LobbyInterface | ErrorInterface) => {
-
 			this.getIntoLobbyAction(lobbyDto)
 		})
 	}

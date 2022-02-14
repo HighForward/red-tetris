@@ -59,13 +59,17 @@ export enum GameState
     Finished = 'FINISHED'
 }
 
-interface BoardDTO {
+interface Pos {
+    x: number
+    y: number
+}
 
+interface BoardDTO {
     player: UserInterface
     state: GameState
     score: number
     board: Array<Array<number>>
-    currentBlock?: Block
+    currentBlock?: Pos[]
 }
 
 export class Board
@@ -98,18 +102,18 @@ export class Board
 
     gameLoop()
     {
-        let tmpBoard = null
+        // let board = null
 
-        tmpBoard = this.blockFall()
+        const { board, malusRow } = this.blockFall()
 
-        if (!tmpBoard)
+        if (!board)
         {
             this.updateBoard(this, this.getCurrentBoard())
-            return undefined
+            return { board: undefined, malusRow }
         }
         else
-            this.updateBoard(this, tmpBoard)
-        return tmpBoard
+            this.updateBoard(this, board)
+        return { board, malusRow }
     }
 
     emitBoardToOthers(others: UserInterface[], tmpBoard: number[])
@@ -139,9 +143,7 @@ export class Board
 
     isCurrentPiece()
     {
-        if (this.currentBlock === null)
-            return false
-        return true
+        return this.currentBlock !== null;
     }
 
     getLast10Pieces(index: number)
@@ -178,17 +180,15 @@ export class Board
             y: 0,
             x: spawn_margin,
             item: this.getBlockWithPatern()
-
         }
 
-        if (!this.canBlockBeInserted(this.currentBlock.item))
-            return false
-        return true
+        return this.canBlockBeInserted(this.currentBlock.item);
+
     }
 
     isTetrisBlock(val: number)
     {
-        return [1, 2, 3, 4, 5, 6, 7].includes(val)
+        return [1, 2, 3, 4, 5, 6, 7, 9].includes(val)
     }
 
     //false draw on copy and return, true draw on real board
@@ -290,11 +290,9 @@ export class Board
 
     checkLastRow()
     {
-        if (this.board[0].filter((item) => { return this.isTetrisBlock(item) }).length)
-        {
-            return true
-        }
-        return false
+        return !!this.board[0].filter((item) => {
+            return this.isTetrisBlock(item)
+        }).length;
     }
 
     removeFullRow()
@@ -302,7 +300,8 @@ export class Board
         let score_coef = 0
         for (let row = 0; row < this.board.length; row++)
         {
-            if (this.board[row].filter((block) => block === 0).length === 0)
+            //return array empty on
+            if (this.board[row].filter((block) => (block === 0 || block === 9) ).length === 0)
             {
                 this.board[row] = this.board[row].fill(0)
 
@@ -316,11 +315,13 @@ export class Board
             }
         }
         this.score += ((10 * score_coef) + (5 * score_coef))
+        return score_coef
     }
 
     blockFall()
     {
         let tmp_board = null
+        let malusRow: number = 0
 
         if (!this.isCurrentPiece()) {
             this.setTetrisToBoard()
@@ -329,18 +330,20 @@ export class Board
         else if (this.getBoundsVertical()) {
 
             this.drawBlock(true)
-            this.removeFullRow()
+            malusRow = this.removeFullRow()
 
             //return null on no space left for next block (stop game)
-            if (!this.setTetrisToBoard())
-                return null
+            if (!this.setTetrisToBoard()) {
+                this.state = GameState.Finished
+                return {board: null, malusRow: {nb: 0, user: this.player}}
+            }
         }
         else {
             this.currentBlock.y++
         }
 
         tmp_board = this.drawBlock()
-        return tmp_board
+        return {board: tmp_board, malusRow: {nb: malusRow, user: this.player}}
     }
 
     getCurrentBoard()
@@ -398,12 +401,46 @@ export class Board
     {
         if (this.getBoundsHorizontal(value))
             this.currentBlock.x += value
+
         return this.drawBlock()
     }
 
-    fastDown()
+    instantDown()
     {
+        while (!this.getBoundsVertical() && this.currentBlock) {
+            this.currentBlock.y++
+        }
         return this.blockFall()
+    }
+
+    addUnbreakableRow(size: number)
+    {
+        for (let y_pos = size; y_pos > 0; y_pos--)
+        {
+            if (this.currentBlock.y > 0)
+                this.currentBlock.y--
+        }
+
+        for (let x = 0; x < size; x++) {
+            this.board.forEach((row, index) => {
+                if (index < this.board.length - 1)
+                    this.board[index] = this.board[index + 1]?.map((block) => block)
+
+                if (index == this.board.length - 1) {
+
+                    this.board[this.board.length - 1].fill(9);
+                }
+            })
+        }
+        this.updateBoard(this, this.drawBlock())
+    }
+
+    getSpectreOfCurrentPiece()
+    {
+        let spectre: Pos[] = []
+        //to_do maybe do like that or print directly on backend ?_?
+        // spectre.push({x: 0, y:0 })
+        return spectre
     }
 
     toDTO()
@@ -416,7 +453,7 @@ export class Board
             },
             score: this.score,
             board: this.board,
-            // currentBlock: this.currentBlock,
+            currentBlock: this.getSpectreOfCurrentPiece(),
             state: this.state
         }
         return boardDTO

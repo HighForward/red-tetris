@@ -17,7 +17,7 @@
 			<div class="flex flex-col bg-gray rounded-sm" style="box-shadow: 0px 0px 25px 5px rgba(0, 0, 0, 0.35);">
 				<div class="flex flex-row" v-for="(row, i) in this.getBoard.board" :key="i">
 					<div class="h-8 w-8" v-for="(item, x) in row" :key="x">
-						<div class="w-full h-full" style="box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.5);" :class="setColor(item)"></div>
+						<div class="w-full h-full" style="box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.5);" :class="setColorCall(item)"></div>
 					</div>
 				</div>
 			</div>
@@ -26,10 +26,9 @@
 
 				<div class="flex flex-row justify-center w-full" v-for="(piece, index) in this.getLast5Pieces">
 					<div class="flex flex-col m-2">
-<!--						<div class="flex flex-row" v-for="(row, x) in responsivePiece(piece)">-->
 						<div class="flex flex-row" v-for="(row, x) in piece">
 							<div class="h-4 w-4" v-for="(block, y) in row">
-								<div class="w-full h-full" :class="setColor(block)"></div>
+								<div class="w-full h-full" :class="setColorCall(block)"></div>
 							</div>
 						</div>
 					</div>
@@ -46,6 +45,7 @@ import {Component, Vue, namespace} from 'nuxt-property-decorator'
 import {Socket} from 'vue-socket.io-extended'
 import GameSpectre from '@/components/game/gameSpectre.vue'
 import {BoardInterface, LobbyInterface, UserInterface, ErrorInterface } from '@/types/gametype'
+import {setColor} from "~/utils/game-utils";
 
 const user = namespace('modules/user')
 const LobbyStore = namespace('modules/lobby')
@@ -76,28 +76,14 @@ export default class Game extends Vue {
     "ArrowUp": false,
     "ArrowDown": false,
     "ArrowLeft": false,
-    "ArrowRight": false
+    "ArrowRight": false,
+    " ": false
   }
 
-	setColor(val: number)
-	{
-		if (val === 1)
-			return 'bg-purple'
-		if (val === 2)
-			return 'bg-yellow'
-		if (val === 3)
-			return 'bg-green'
-		if (val === 4)
-			return 'bg-blue'
-		if (val === 5)
-			return 'bg-orange'
-		if (val === 6)
-			return 'bg-bluesky'
-		if (val === 7)
-			return 'bg-red'
-		if (val === 0)
-			return 'bg-gray'
-	}
+  setColorCall(val: number)
+  {
+    return setColor(val)
+  }
 
   keyDownEvents(e: KeyboardEvent)
 	{
@@ -116,7 +102,11 @@ export default class Game extends Vue {
   moveAction(key: string)
   {
 
-    const delay = (key === 'ArrowUp') ? 150 : 100
+    let delay = 100
+    if (key === ' ')
+      delay = 400
+    else if (key === 'ArrowUp')
+      delay = 150
 
     if (this.keySet['ArrowUp'] && key === 'ArrowUp')
       this.rotateBlock()
@@ -126,6 +116,8 @@ export default class Game extends Vue {
       this.translateBlock(1)
     else if (this.keySet['ArrowDown'] && key === 'ArrowDown')
       this.fastDown()
+    else if (this.keySet[' '] && key === ' ')
+      this.instantDown()
 
     setTimeout(() => {
       if (this.keySet[key])
@@ -166,6 +158,14 @@ export default class Game extends Vue {
 		if (this.getLobby && this.getBoard && this.getBoard.state === GameState.STARTED)
 		{
 			this.$socket.client.emit('fastDown', this.getLobby.uid)
+		}
+	}
+
+  instantDown()
+	{
+		if (this.getLobby && this.getBoard && this.getBoard.state === GameState.STARTED)
+		{
+			this.$socket.client.emit('instantDown', this.getLobby.uid)
 		}
 	}
 }

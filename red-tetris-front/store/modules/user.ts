@@ -69,4 +69,12 @@ export default class User extends VuexModule {
       this.usersOnline = users
     }
 
+    @Mutation
+    updateUsernameOnlineList(user: UserInterface) {
+      this.usersOnline.forEach((u) => {
+        if (u.id === user.id)
+          u.username = user.username
+      })
+    }
+
 }

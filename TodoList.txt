@@ -4,16 +4,19 @@ Classe: Player / Piece / Game backend
 Les tests unitaires devront couvrir au minimum 70% des statements, functions, lines
 et au minimum 50% des branches (voir ci-après).
 
-Dès lors qu’un joueur détruit des lignes sur son terrain, les joueurs adverses
-recoivent en malus n - 1 lignes, alors indestructibles, qui s’insèrent en bas de leur terrain.
-
-Barre d’espace : Déplacement vertical afin de positionner une piéce dans un trou
-du tas
+//MAYBE UPDATE BORD ON TIME AFTER USER INPUT (fast down and instant down)
 
 Chaque joueur se connecte à une partie via une hash-based url de type :
 • http://<server_name_or_ip>:<port>/#<room>[<player_name>]
 
+//CHECK ABOVE FOR SPAMMING URL AND OTHERS TEST
+
+
+
+MAYBE DO IT FAST IT CAN BE FUN AND FAST lol
 Solo play
+
+
 
 BONUS:
 
@@ -23,8 +26,6 @@ BONUS:
 
 
 
-
-SHOW NB OF PLAYER ONLINE
-OPTIMIZE PAYLOAD OF BOARD
-OPTIMIZE KEYPRESS
+SHOW NB OF PLAYER ONLINE // UPDATE ON PSEUDO CHANGE
+OPTIMIZE PAYLOAD OF BOARD // FLEMME
 CLOSE ALL BOARD IN GAME WHEN THE LAST PLAYER IS THE ONLY ALIVE

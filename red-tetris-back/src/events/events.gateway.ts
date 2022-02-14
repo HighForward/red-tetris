@@ -68,7 +68,9 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 
     @SubscribeMessage('usernameSelected')
     validateUsername(client: Socket, username: string) {
-        this.eventsServices.setUsername(client.id, username)
+        let user = this.eventsServices.setUsername(client.id, username)
+        const {socket, ...payload} = user
+        this.server.emit('updateUsernameOnlineList', payload)
         return true
     }
 
@@ -195,6 +197,16 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
             return ({ error: 'You\'re not online.' })
 
         this.gamesServices.fastDown(user, game_uid, this.server)
+    }
+
+    @SubscribeMessage('instantDown')
+    instantDown(client: Socket, game_uid: string)
+    {
+        const user = this.eventsServices.findOneById(client.id)
+        if (!user)
+            return ({ error: 'You\'re not online.' })
+
+        this.gamesServices.instantDown(user, game_uid, this.server)
     }
 
     /** **/

@@ -52,7 +52,11 @@ export class GamesServices {
     joinLobby(user: UserInterface, uid: string, server: Server) : LobbyDTO | ErrorInterface
     {
         let lobby = this.getLobbyByUID(uid)
+
         if (lobby) {
+
+            if (lobby.players.length === 8)
+                return { error: 'Lobby is full' }
 
             if (!lobby.isPlayerOfLobby(user)) {
 
@@ -65,7 +69,6 @@ export class GamesServices {
 
             lobby.emitUpdateLobby()
             server.emit('updateLobbyList', lobby.toDTO())
-
 
             return lobby.toDTO()
         }
@@ -176,4 +179,14 @@ export class GamesServices {
                 lobby.fastDown(user, this.schedulerRegistry, server)
         }
     }
+
+    instantDown(user: UserInterface, game_uid: string, server: Server)
+    {
+        let lobby = this.getLobbyOfUser(user, game_uid)
+        if (lobby)
+        {
+            lobby.instantDown(user, this.schedulerRegistry, server)
+        }
+    }
+
 }

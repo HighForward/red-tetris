@@ -120,15 +120,18 @@ export default class LobbyHandler
         return true
     }
 
-    gameTrigger(board: Board, others: UserInterface[], schedulerRegistry: SchedulerRegistry, server)
+    gameTrigger(currentBoard: Board, others: UserInterface[], schedulerRegistry: SchedulerRegistry, server)
     {
-        let tmpBoard = undefined
-        if (!(tmpBoard = board.gameLoop())) {
-            this.stopGame(board, schedulerRegistry, server)
-        }
-        if (this.players.length > 1 && tmpBoard) {
+        const {board, malusRow} = currentBoard.gameLoop()
 
-            board.emitBoardToOthers(others, tmpBoard)
+        if (malusRow && malusRow.nb > 0)
+            this.addRowToOther(malusRow.user, malusRow.nb)
+
+        if (!board) {
+            this.stopGame(currentBoard, schedulerRegistry, server)
+        }
+        if (this.players.length > 1 && board) {
+            currentBoard.emitBoardToOthers(others, board)
         }
     }
 
@@ -172,14 +175,12 @@ export default class LobbyHandler
         {
             this.state = LobbyState.WARMING
             this.emitMsgToChat(`Le vainqueur est ${board.player.username} !!`)
-
         }
 
         this.emitUpdateLobby()
         server.emit('updateLobbyList', this.toDTO())
 
         this.boards = this.boards.filter((tmp) => { return tmp.player.id !== board.player.id})
-
     }
 
     getBoardOfUser(user: UserInterface)
@@ -230,7 +231,7 @@ export default class LobbyHandler
     rotateBlock(user: UserInterface)
     {
         let board = this.getBoardOfUser(user)
-        if (board && board.state === GameState.Started)
+        if (board && board.state === GameState.Started && board.currentBlock)
         {
             let tmp_board = board.rotateTetris()
             board.updateBoard(board, tmp_board)
@@ -246,7 +247,7 @@ export default class LobbyHandler
     translateBlock(user: UserInterface, value: number)
     {
         let board = this.getBoardOfUser(user)
-        if (board && board.state === GameState.Started)
+        if (board && board.state === GameState.Started && board.currentBlock)
         {
             let tmp_board = board.translateTetris(value)
             board.updateBoard(board, tmp_board)
@@ -259,13 +260,48 @@ export default class LobbyHandler
         }
     }
 
+    addRowToOther(user: UserInterface, size: number)
+    {
+        let boards = this.boards.filter((board) => board.player.id !== user.id)
+        if (boards.length)
+        {
+            boards.forEach((board) => {
+                board.addUnbreakableRow(size)
+            })
+        }
+
+    }
+
     fastDown(user: UserInterface, schedulerRegistry: SchedulerRegistry, server: Server)
     {
         let board = this.getBoardOfUser(user)
-        if (board && board.state === GameState.Started) {
+        if (board && board.state === GameState.Started && board.currentBlock)  {
             const others = this.players.filter((tmpuser) => { return tmpuser.id !== user.id })
 
             this.gameTrigger(board, others, schedulerRegistry, server)
+        }
+    }
+
+    instantDown(user: UserInterface, schedulerRegistry: SchedulerRegistry, server: Server)
+    {
+        let currentBoard = this.getBoardOfUser(user)
+        if (currentBoard && currentBoard.state === GameState.Started && currentBoard.currentBlock) {
+            const others = this.players.filter((tmpuser) => { return tmpuser.id !== user.id })
+
+            let { board, malusRow } = currentBoard.instantDown()
+
+            if (malusRow && malusRow.nb)
+                this.addRowToOther(malusRow.user, malusRow.nb)
+
+            currentBoard.updateBoard(currentBoard, board)
+            if (!board)
+                this.stopGame(currentBoard, schedulerRegistry, server)
+
+            if (this.players.length > 1 && board) {
+
+                const others = this.players.filter((tmpuser) => { return tmpuser.id !== user.id })
+                currentBoard.emitBoardToOthers(others, board)
+            }
         }
     }
 }

@@ -42,12 +42,18 @@ export interface ErrorInterface
     error: string
 }
 
+export interface Pos {
+  x: number
+  y: number
+}
+
 export interface BoardInterface
 {
     player: UserInterface
     state: GameState
     score: number
     board: Array<Array<number>>
+    currentBlock?: Pos[]
 }
 
 export interface UpdateUsersOnline {

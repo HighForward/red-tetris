@@ -22,7 +22,7 @@
 <script lang="ts">
 
 import { Vue, Component, Prop, namespace } from 'nuxt-property-decorator'
-import {LobbyInterface, BoardInterface, UserInterface, UpdateUsersOnline} from '@/types/gametype'
+import {LobbyInterface, BoardInterface, UserInterface, UpdateUsersOnline, ErrorInterface} from '@/types/gametype'
 import { Socket } from 'vue-socket.io-extended'
 import InfoBoard from '/components/InfoBoard.vue'
 
@@ -38,8 +38,6 @@ const UserStore = namespace('modules/user')
 })
 export default class App extends Vue {
 
-	// @user.Getter
-	// public fullName!: string
 
 	@LobbyStore.State
 	public currentLobby!: LobbyInterface | null
@@ -81,7 +79,7 @@ export default class App extends Vue {
 	public removeFirstPiece!: () => void
 
 	@BoardStore.Mutation
-	public updateBoard!: (board: BoardInterface) => void
+	public updateBoard!: (board: BoardInterface | null) => void
 
 	@BoardStore.Mutation
 	public updateBoardList!: (board: BoardInterface[]) => void
@@ -89,14 +87,51 @@ export default class App extends Vue {
 	@BoardStore.Mutation
 	public updateBoardArray!: (board: number[][]) => void
 
-	@UserStore.Mutation
-	public setUsername!: (username: string) => void
+  @UserStore.Mutation
+  public setUserTypeUsername!: () => void
+
+  @UserStore.Mutation
+  public setUsername!: (username: string) => void
 
   @UserStore.Mutation
   public setUsersListOnline!: (users: UserInterface[]) => void
 
   @UserStore.Mutation
   public setUserOnline!: (payload: UpdateUsersOnline) => void
+
+  @UserStore.Mutation
+  public updateUsernameOnlineList!: (payload: UserInterface) => void
+
+  perform_hash_based_url(hash: string)
+  {
+    let index_first = hash.indexOf('[')
+    let index_last = hash.indexOf(']')
+
+    if (!hash || !hash.length)
+      return {nothing: true}
+
+    if ((hash && hash.length) && (index_first === -1 || index_last === -1))
+      return {error: "Hash URL bad format"}
+
+    const pseudo = hash.substring(index_first + 1, index_last);
+    const game_uid = hash.substring(1, index_first)
+
+    if (!pseudo || !pseudo.length || !game_uid || !game_uid.length)
+      return {error: "Hash URL missing value"}
+
+    return {pseudo, game_uid}
+  }
+
+  getIntoLobbyAction(lobbyDto: LobbyInterface | ErrorInterface)
+  {
+    if (!lobbyDto || (lobbyDto as ErrorInterface).error) {
+      this.$toast.error(`${(lobbyDto as ErrorInterface).error}`)
+    }
+    else {
+      this.updateLobby(lobbyDto as LobbyInterface)
+      this.$router.push(`/lobby`)
+    }
+  }
 
 	mounted()
 	{
@@ -109,6 +144,23 @@ export default class App extends Vue {
       this.setUsersListOnline(users)
     })
 
+    let val = this.perform_hash_based_url(this.$route.hash)
+    if (val.error)
+      this.$toast.info(val.error)
+    else if (val && val.pseudo && val.game_uid)
+    {
+      this.$socket.client.emit('usernameSelected', val.pseudo, (data: string) => {
+
+        if (data) {
+          this.setUsername(val?.pseudo as string)
+          this.setUserTypeUsername()
+        }
+      })
+      //
+      this.$socket.client.emit('joinLobby', val.game_uid, (lobbyDto: LobbyInterface | ErrorInterface) => {
+        this.getIntoLobbyAction(lobbyDto)
+      })
+    }
 	}
 
   @Socket('setUserOnlineUpdate')
@@ -116,6 +168,14 @@ export default class App extends Vue {
   {
     this.setUserOnline(payload)
   }
+
+  @Socket('updateUsernameOnlineList')
+  updateUsernameList(payload: UserInterface)
+  {
+    this.updateUsernameOnlineList(payload)
+  }
+
+
 
 	@Socket('newLobby')
 	addLobby(newLobby: LobbyInterface)

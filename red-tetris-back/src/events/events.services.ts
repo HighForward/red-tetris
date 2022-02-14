@@ -48,6 +48,7 @@ export class EventsServices {
             user.username = username
             user.type = UserType.USERNAME
         }
+        return user
     }
 
     getUsers()
