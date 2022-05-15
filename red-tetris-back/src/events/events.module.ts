@@ -1,14 +1,16 @@
-import {Module} from "@nestjs/common";
-import {AppGateway} from "./events.gateway";
+import { Module } from "@nestjs/common";
+import { AppGateway } from "./events.gateway";
 import { EventsServices } from "./events.services";
-import { GamesModule } from '../games/games.modules'
-import { GamesServices } from "src/games/games.services";
+import { UsersModule } from "../users/users.module";
+import { RoomsModule } from "../rooms/rooms.module";
 
 @Module({
-    imports: [GamesModule],
+    imports: [RoomsModule, UsersModule],
     controllers: [],
-    providers: [AppGateway, EventsServices, GamesServices]
+    providers: [AppGateway, EventsServices],
+    exports: [EventsServices],
 })
 
-export class EventsModule {}
+export class EventsModule {
+}
 

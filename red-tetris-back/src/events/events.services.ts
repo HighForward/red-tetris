@@ -1,58 +1,24 @@
 import { Injectable } from "@nestjs/common";
-import { UserInterface, UserType } from "./interfaces/user.interface";
-import { Socket } from 'socket.io';
+import { Server, Socket } from 'socket.io';
+import { WsUser } from "../decorators/ws.user";
 
 
 @Injectable()
 export class EventsServices {
 
-    private users: UserInterface[] = []
+    public server: Server = null
 
-    findOneById(id: string) : UserInterface | undefined
+
+    emitMessage(message: string, data: any)
     {
-        let user_index: number = -1
-        if ((user_index = this.users.findIndex((user) => user.id === id)) !== -1)
-        {
-            return this.users[user_index]
-        }
-        return undefined
+        this.server.emit(message, data)
     }
 
-    findOneIndexById(id: string) : number {
-        return this.users.findIndex((user) =>  { return user.id === id })
-    }
-
-    RemoveOneById(id: string) : void
+    getServerSocket()
     {
-        let user_index: number = -1
-        if ((user_index = this.findOneIndexById(id)) !== -1)
-        {
-            this.users.splice(user_index, 1)
-        }
+        return this.server
     }
 
-    pushUserId(id: string, client: Socket) : void
-    {
-        const user: UserInterface = {
-            id: id,
-            username: `guest#${id.substring(0, 4)}`,
-            socket: client,
-            type: UserType.NONE
-        }
-        this.users.push(user)
-    }
 
-    setUsername(id: string, username: string) {
-        let user = this.findOneById(id)
-        if (user) {
-            user.username = username
-            user.type = UserType.USERNAME
-        }
-        return user
-    }
 
-    getUsers()
-    {
-        return this.users
-    }
 }

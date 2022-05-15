@@ -104,7 +104,7 @@ export default class Game extends Vue {
 
     let delay = 100
     if (key === ' ')
-      delay = 400
+      delay = 800
     else if (key === 'ArrowUp')
       delay = 150
 

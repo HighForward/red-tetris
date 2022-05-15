@@ -11,7 +11,7 @@ services:
       PORT: 3000
       WS_PORT: 81
       BACKEND_URL: 'http://localhost'
-    command: "npm run start"
+    command: "npm run dev"
   back:
     build: ./red-tetris-back/
     container_name: nest

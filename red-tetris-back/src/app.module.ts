@@ -3,10 +3,12 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EventsModule } from './events/events.module';
-// import { GamesModule } from './games/games.modules'
+import { UsersModule } from './users/users.module';
+import { RoomsModule } from './rooms/rooms.module';
+import { BoardsModule } from "./boards/boards.module";
 
 @Module({
-  imports: [EventsModule, ScheduleModule.forRoot()],
+  imports: [EventsModule, UsersModule, RoomsModule, BoardsModule, ScheduleModule.forRoot()],
   controllers: [AppController],
   providers: [AppService],
 })
